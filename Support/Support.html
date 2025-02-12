@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="ar">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>الدردشة</title>
+    <link rel="stylesheet" href="Support.css">
+</head>
+<body>
+    <!-- العنوان الثابت في الأعلى -->
+    <div class="customer-service">خدمة العملاء</div>
+
+    <!-- الحاوية الرئيسية -->
+    <div class="container">
+        <!-- مربع الرسائل -->
+        <div id="chat-box">
+            <div id="chat"></div>
+        </div>
+
+        <!-- منطقة الإدخال -->
+        <div class="input-area">
+            <input type="text" id="message-input" placeholder="اكتب رسالة...">
+            <button id="send-btn" onclick="sendMessage()">إرسال</button>
+        </div>
+    </div>
+
+    <script>
+        const apiUrl = "http://localhost:3000/api/messages";
+
+        function loadMessages() {
+            fetch(apiUrl)
+                .then(response => response.json())
+                .then(messages => {
+                    const chatDiv = document.getElementById("chat");
+                    chatDiv.innerHTML = "";
+
+                    messages.forEach(message => {
+                        const msgElement = document.createElement("p");
+
+                        let displayText = message.includes(": ") ? 
+                                          message.split(": ")[1] : 
+                                          message;
+
+                        if (message.startsWith("Question:")) {
+                            msgElement.classList.add("question-message");
+                        } else if (message.startsWith("Answer:")) {
+                            msgElement.classList.add("answer-message");
+                        }
+
+                        msgElement.textContent = displayText;
+                        chatDiv.appendChild(msgElement);
+                    });
+                })
+                .catch(error => console.error("Error loading messages:", error));
+        }
+
+        function sendMessage() {
+            const messageInput = document.getElementById("message-input");
+            const message = messageInput.value.trim();
+
+            if (!message) return;
+
+            fetch(apiUrl, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ message: message, source: "html" })
+            })
+            .then(() => {
+                messageInput.value = "";
+                loadMessages();
+            })
+            .catch(error => console.error("Error sending message:", error));
+        }
+
+        setInterval(loadMessages, 2000);
+        loadMessages();
+    </script>
+</body>
+</html>
